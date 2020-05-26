@@ -19,7 +19,7 @@ public class TransportBroker implements Runnable {
             System.out.println("Connected...");
             try {
                 JSONObject message = node.receiveMessage();
-                
+
                 if (message.getString("type").equals("Subscriber")) {
                     node.setType(Constants.SUBSCRIBER);
                 } else if (message.getString("type").equals("Publisher")) {
