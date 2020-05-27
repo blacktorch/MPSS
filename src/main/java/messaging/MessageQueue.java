@@ -11,7 +11,7 @@ public class MessageQueue {
     /**
      * The queue itself, all incoming messages are stored in here.
      */
-    private Vector<String> queue = new Vector<String>(capacity);
+    private Vector<Message> queue = new Vector<Message>(capacity);
 
     /**
      * Constructor, initializes the queue.
@@ -27,8 +27,10 @@ public class MessageQueue {
      *
      * @param message
      */
-    public synchronized void send(String message) {
-        //TODO check
+    public synchronized void send(Message message) {
+        if (queue.size() < capacity ){
+            this.queue.add(message);
+        }
     }
 
     /**
@@ -36,8 +38,13 @@ public class MessageQueue {
      *
      * @return
      */
-    public synchronized String receive() {
-        //TODO check
-        return "0";
+    public synchronized Message receive() {
+        Message message = queue.firstElement();
+        queue.remove(message);
+        return message;
+    }
+
+    public boolean isEmpty(){
+        return queue.isEmpty();
     }
 }
