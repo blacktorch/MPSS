@@ -68,6 +68,10 @@ public class Node {
 
     }
 
+    public boolean isDataAvailable() throws IOException {
+        return in.available() > 0;
+    }
+
     public void removeNode() {
         if (nodeSocket != null){
             try {
