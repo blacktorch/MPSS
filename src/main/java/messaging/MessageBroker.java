@@ -1,57 +1,34 @@
 package messaging;
 
-import data.Subject;
+import interfaces.INewMessageListener;
 import networking.Node;
 import utils.Constants;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class MessageBroker implements Runnable {
-    private Map<String, Subject> subjectMap;
     private MessageQueue messageQueue;
+    private INewMessageListener listener;
+    private Node node;
 
-    public MessageBroker(){
-        this.subjectMap = new HashMap<String, Subject>();
+    public MessageBroker(Node listener){
         this.messageQueue = new MessageQueue(Constants.QUEUE_CAPACITY);
+        this.node = listener;
+        this.listener = this.node;
     }
 
-    public void addNodeToSubject(Node node, List<String> titles){
-        addSubjects(titles);
-        for (String title : titles){
-            if (subjectMap.containsKey(title)){
-                subjectMap.get(title).addNode(node);
-            }
-        }
-    }
-
-    public void publishData(Message data){
-        addSubjects(data.getSubjectTitles());
+    public synchronized void publishData(Message data){
         messageQueue.send(data);
     }
 
-    private void addSubjects(List<String> titles){
-        for (String title : titles){
-            if (!subjectMap.containsKey(title)){
-                Subject subject = new Subject(title);
-                subjectMap.put(title, subject);
-            }
-        }
 
+    public Node getNode() {
+        return node;
     }
 
-
     public void run() {
-        while (true){
+        while (node.isConnected()){
             if (!messageQueue.isEmpty()){
                 Message message = messageQueue.receive();
-                for (String title : message.getSubjectTitles()){
-                    if (subjectMap.containsKey(title)){
-                        subjectMap.get(title).broadcast(message);
-                    }
-                }
+                listener.onNewPublishedMessage(message);
             }
         }
     }

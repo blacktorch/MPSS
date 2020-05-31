@@ -1,26 +1,39 @@
 package networking;
 
+import interfaces.INewMessageListener;
+import interfaces.INodeDataChangeListener;
+import messaging.Message;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import utils.Constants;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.List;
 
 
-public class Node {
+public class Node  implements INewMessageListener, Runnable {
     private Socket nodeSocket;
     private OutputStream out;
     private InputStream in;
     private InetAddress address;
     private boolean connected;
     private int type;
+    private volatile boolean terminated = false;
+    private INodeDataChangeListener nodeDataChangeListener;
+    private List<String> subjectTitles;
 
-    public Node(Socket socket){
+    public Node(Socket socket, INodeDataChangeListener nodeDataChangeListener){
         this.nodeSocket = socket;
+        this.nodeDataChangeListener = nodeDataChangeListener;
+        subjectTitles = new ArrayList<String>();
 
         if (nodeSocket.isConnected()){
+            System.out.println("Connected...");
             try {
                 out = nodeSocket.getOutputStream();
                 in = nodeSocket.getInputStream();
@@ -34,7 +47,7 @@ public class Node {
 
     }
 
-    public JSONObject receiveMessage() throws IOException {
+    public synchronized JSONObject receiveMessage() throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int read;
         while ((read = in.read()) != 0) {
@@ -54,7 +67,7 @@ public class Node {
         return null;
     }
 
-    public void sendMessage(JSONObject json) throws IOException {
+    public synchronized void sendMessage(JSONObject json) throws IOException {
         try {
             OutputStreamWriter osw = new OutputStreamWriter(out);
             osw.write(json.toString());
@@ -62,17 +75,17 @@ public class Node {
             osw.flush();
         }
         catch (SocketException e){
-            removeNode();
+            terminate();
             System.out.println("Node has been disconnected");
         }
 
     }
 
     public boolean isDataAvailable() throws IOException {
-        return in.available() > 0;
+        return in.available() > Constants.MINIMUM_BUFFER_SIZE;
     }
 
-    public void removeNode() {
+    private void removeNode() {
         if (nodeSocket != null){
             try {
                 nodeSocket.close();
@@ -80,7 +93,7 @@ public class Node {
             catch(IOException ignored) {}
         }
         try {
-            Thread.sleep(1000);
+            Thread.sleep(200);
         } catch (InterruptedException ignored) {}
         connected = false;
     }
@@ -90,10 +103,10 @@ public class Node {
     }
 
     public boolean isConnected(){
-        return connected;
+        return connected && !terminated;
     }
 
-    public InetAddress getAddress(){
+    public synchronized InetAddress getAddress(){
         return address;
     }
 
@@ -101,4 +114,99 @@ public class Node {
         this.type = type;
     }
 
+    public synchronized void terminate(){
+        terminated = true;
+        removeNode();
+    }
+
+    private synchronized List<String> getSubjectTitles(JSONArray jsonArray){
+        List<String> subjectTitles = new ArrayList<String>();
+        for (int i = 0; i < jsonArray.length(); i++){
+            subjectTitles.add(jsonArray.getString(i));
+        }
+        return subjectTitles;
+    }
+
+    public void setNodeDataChangeListener(INodeDataChangeListener nodeDataChangeListener) {
+        this.nodeDataChangeListener = nodeDataChangeListener;
+    }
+
+    private void checkAndRemoveNode( int timeout){
+        try {
+            if (!nodeSocket.getInetAddress().isReachable(timeout)){
+                System.out.println("Node Disconnected");
+                terminate();
+            }
+        } catch (IOException e){
+            /*terminate node if the pipe is broken*/
+            System.out.println("Node Disconnected");
+            terminate();
+        }
+    }
+
+    public void run() {
+
+
+        if (!terminated && connected) {
+
+            try {
+                JSONObject message = receiveMessage();
+                System.out.println(message.toString());
+                if (message.getString(Constants.TYPE).equals(Constants.SUB)) {
+                    this.setType(Constants.SUBSCRIBER);
+                    subjectTitles = getSubjectTitles(message.getJSONArray(Constants.SUBJECTS));
+                } else if (message.getString(Constants.TYPE).equals(Constants.PUB)) {
+                    this.setType(Constants.PUBLISHER);
+                    subjectTitles = getSubjectTitles(message.getJSONArray(Constants.SUBJECTS));
+                } else {
+                    terminate();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        while (!terminated && connected){
+
+            if (type == Constants.PUBLISHER) {
+                try {
+                    if (isDataAvailable()){
+                        JSONObject message = receiveMessage();
+                        assert message != null;
+                        Message data = new Message(message.getJSONObject(Constants.DATA), subjectTitles, message.getLong(Constants.TIME_STAMP));
+                        this.nodeDataChangeListener.onNewPublisherData(data);
+                    } else {
+                        /*Check if the publisher node is still alive*/
+                        checkAndRemoveNode(Constants.PUBLISHER_HEARTBEAT_TIMEOUT);
+
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }else if(type == Constants.SUBSCRIBER) {
+                /*Check if the subscriber node is still alive*/
+                checkAndRemoveNode(Constants.SUBSCRIBER_HEARTBEAT_TIMEOUT);
+            }
+
+        }
+    }
+
+    public synchronized void onNewPublishedMessage(Message message) {
+        try {
+            if (type == Constants.SUBSCRIBER){
+
+                for (String subject : message.getSubjectTitles()){
+                    if (subjectTitles.contains(subject)){
+                        message.getData().put(Constants.SUBJECT, subject);
+                        sendMessage(message.getData());
+                        System.out.println(message.getData().toString());
+                    }
+                }
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
