@@ -75,7 +75,6 @@ public class Node  implements INewMessageListener, Runnable {
             osw.flush();
         }
         catch (SocketException e){
-            System.out.println(getType());
             terminate();
             System.out.println("Node has been disconnected");
         }
@@ -132,9 +131,9 @@ public class Node  implements INewMessageListener, Runnable {
         this.nodeDataChangeListener = nodeDataChangeListener;
     }
 
-    private void checkAndRemoveNode(){
+    private void checkAndRemoveNode( int timeout){
         try {
-            if (!nodeSocket.getInetAddress().isReachable(Constants.PUBLISHER_HEARTBEAT_TIMEOUT)){
+            if (!nodeSocket.getInetAddress().isReachable(timeout)){
                 System.out.println("Node Disconnected");
                 terminate();
             }
@@ -177,7 +176,7 @@ public class Node  implements INewMessageListener, Runnable {
                         this.nodeDataChangeListener.onNewPublisherData(data);
                     } else {
                         /*Check if the publisher node is still alive*/
-                        checkAndRemoveNode();
+                        checkAndRemoveNode(Constants.PUBLISHER_HEARTBEAT_TIMEOUT);
 
                     }
 
@@ -186,7 +185,7 @@ public class Node  implements INewMessageListener, Runnable {
                 }
             }else if(type == Constants.SUBSCRIBER) {
                 /*Check if the subscriber node is still alive*/
-                checkAndRemoveNode();
+                checkAndRemoveNode(Constants.SUBSCRIBER_HEARTBEAT_TIMEOUT);
             }
 
         }
