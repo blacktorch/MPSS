@@ -75,6 +75,7 @@ public class Node  implements INewMessageListener, Runnable {
             osw.flush();
         }
         catch (SocketException e){
+            System.out.println(getType());
             terminate();
             System.out.println("Node has been disconnected");
         }
@@ -93,7 +94,7 @@ public class Node  implements INewMessageListener, Runnable {
             catch(IOException ignored) {}
         }
         try {
-            Thread.sleep(1000);
+            Thread.sleep(200);
         } catch (InterruptedException ignored) {}
         connected = false;
     }
@@ -131,6 +132,19 @@ public class Node  implements INewMessageListener, Runnable {
         this.nodeDataChangeListener = nodeDataChangeListener;
     }
 
+    private void checkAndRemoveNode(){
+        try {
+            if (!nodeSocket.getInetAddress().isReachable(Constants.PUBLISHER_HEARTBEAT_TIMEOUT)){
+                System.out.println("Node Disconnected");
+                terminate();
+            }
+        } catch (IOException e){
+            /*terminate node if the pipe is broken*/
+            System.out.println("Node Disconnected");
+            terminate();
+        }
+    }
+
     public void run() {
 
 
@@ -139,13 +153,12 @@ public class Node  implements INewMessageListener, Runnable {
             try {
                 JSONObject message = receiveMessage();
                 System.out.println(message.toString());
-                if (message.getString("type").equals("Subscriber")) {
+                if (message.getString(Constants.TYPE).equals(Constants.SUB)) {
                     this.setType(Constants.SUBSCRIBER);
-                    System.out.println("Subscriber registered");
-                    subjectTitles = getSubjectTitles(message.getJSONArray("subjects"));
-                } else if (message.getString("type").equals("Publisher")) {
+                    subjectTitles = getSubjectTitles(message.getJSONArray(Constants.SUBJECTS));
+                } else if (message.getString(Constants.TYPE).equals(Constants.PUB)) {
                     this.setType(Constants.PUBLISHER);
-                    subjectTitles = getSubjectTitles(message.getJSONArray("subjects"));
+                    subjectTitles = getSubjectTitles(message.getJSONArray(Constants.SUBJECTS));
                 } else {
                     terminate();
                 }
@@ -156,26 +169,15 @@ public class Node  implements INewMessageListener, Runnable {
         while (!terminated && connected){
 
             if (type == Constants.PUBLISHER) {
-                System.out.println("--------I am a pub---------");
                 try {
                     if (isDataAvailable()){
                         JSONObject message = receiveMessage();
                         assert message != null;
                         Message data = new Message(message.getJSONObject(Constants.DATA), subjectTitles, message.getLong(Constants.TIME_STAMP));
                         this.nodeDataChangeListener.onNewPublisherData(data);
-                        //System.out.println(data.getData().toString());
                     } else {
-                        /*Check if the publisher is still alive*/
-                        try {
-                            if (!nodeSocket.getInetAddress().isReachable(Constants.PUBLISHER_HEARTBEAT_TIMEOUT)){
-                                System.out.println("Publisher Disconnected");
-                                terminate();
-                            }
-                        } catch (SocketException e){
-                            //terminate node if the pipe is broken
-                            System.out.println("Publisher Disconnected");
-                            terminate();
-                        }
+                        /*Check if the publisher node is still alive*/
+                        checkAndRemoveNode();
 
                     }
 
@@ -183,7 +185,8 @@ public class Node  implements INewMessageListener, Runnable {
                     e.printStackTrace();
                 }
             }else if(type == Constants.SUBSCRIBER) {
-                System.out.println("I am a sub");
+                /*Check if the subscriber node is still alive*/
+                checkAndRemoveNode();
             }
 
         }
@@ -192,10 +195,10 @@ public class Node  implements INewMessageListener, Runnable {
     public synchronized void onNewPublishedMessage(Message message) {
         try {
             if (type == Constants.SUBSCRIBER){
-                System.out.println("-----------SUB__________");
+
                 for (String subject : message.getSubjectTitles()){
                     if (subjectTitles.contains(subject)){
-                        message.getData().put("subject", subject);
+                        message.getData().put(Constants.SUBJECT, subject);
                         sendMessage(message.getData());
                         System.out.println(message.getData().toString());
                     }

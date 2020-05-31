@@ -5,48 +5,29 @@ import networking.Node;
 import utils.Constants;
 
 public class MessageBroker implements Runnable {
-    //private Map<String, Subject> subjectMap;
     private MessageQueue messageQueue;
     private INewMessageListener listener;
-   // Node node;
+    private Node node;
 
-    public MessageBroker(INewMessageListener listener){
-        //this.subjectMap = new HashMap<String, Subject>();
+    public MessageBroker(Node listener){
         this.messageQueue = new MessageQueue(Constants.QUEUE_CAPACITY);
-        this.listener = listener;
-        //this.node = node;
+        this.node = listener;
+        this.listener = this.node;
     }
 
-//    public void addNodeToSubject(Node node, List<String> titles){
-//        addSubjects(titles);
-//        for (String title : titles){
-//            if (subjectMap.containsKey(title)){
-//                subjectMap.get(title).addNode(node);
-//            }
-//        }
-//    }
-
     public synchronized void publishData(Message data){
-        //addSubjects(data.getSubjectTitles());
         messageQueue.send(data);
     }
 
-//    private void addSubjects(List<String> titles){
-//        for (String title : titles){
-//            if (!subjectMap.containsKey(title)){
-//                Subject subject = new Subject(title);
-//                subjectMap.put(title, subject);
-//            }
-//        }
-//
-//    }
 
+    public Node getNode() {
+        return node;
+    }
 
     public void run() {
-        while (true){
+        while (node.isConnected()){
             if (!messageQueue.isEmpty()){
                 Message message = messageQueue.receive();
-                //System.out.println(message.getData().toString());
                 listener.onNewPublishedMessage(message);
             }
         }
