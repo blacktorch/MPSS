@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import utils.Constants;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +41,6 @@ public class TransportBroker implements Runnable {
                 if (message.getString("type").equals("Subscriber")) {
                     node.setType(Constants.SUBSCRIBER);
                     subjectTitles = getSubjectTitles(message.getJSONArray("subjects"));
-                    this.nodeDataChangeListener.onNewSubscriber(node, subjectTitles);
                 } else if (message.getString("type").equals("Publisher")) {
                     node.setType(Constants.PUBLISHER);
                     subjectTitles = getSubjectTitles(message.getJSONArray("subjects"));
@@ -57,6 +57,19 @@ public class TransportBroker implements Runnable {
                         JSONObject message = node.receiveMessage();
                         Message data = new Message(message.getJSONObject("data"), subjectTitles, message.getLong("_timeStamp"));
                         this.nodeDataChangeListener.onNewPublisherData(data);
+                    } else {
+                        /*Check if the publisher is still alive*/
+                        try {
+                            if (!node.getAddress().isReachable(Constants.PUBLISHER_HEARTBEAT_TIMEOUT)){
+                                System.out.println("Publisher Disconnected");
+                                node.terminate();
+                            }
+                        } catch (SocketException e){
+                            //terminate node if the pipe is broken
+                            System.out.println("Publisher Disconnected");
+                            node.terminate();
+                        }
+
                     }
 
                 } catch (IOException e) {
