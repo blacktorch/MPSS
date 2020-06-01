@@ -9,5 +9,6 @@ This can be very useful in [multi agent](https://en.wikipedia.org/wiki/Multi-age
 > - Data is passed around using [JSON](https://www.json.org/json-en.html).
 
 ## Software Architecture
-
-<img src="./software_architecture.png" width="200">
+<p align="center">
+    <img src="./software_architecture.png" width="400">
+</p>
