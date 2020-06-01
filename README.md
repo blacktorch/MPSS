@@ -10,4 +10,4 @@ This can be very useful in [multi agent](https://en.wikipedia.org/wiki/Multi-age
 
 ## Software Architecture
 
-![Software Architecture](/software_architecture.png | width=500px)
+[[software_architecture.png | width=500px | alt=Software Architecture]]
