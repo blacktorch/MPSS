@@ -2,9 +2,12 @@ package messaging;
 
 import interfaces.INewMessageListener;
 import networking.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.Constants;
 
 public class MessageBroker implements Runnable {
+    private static Logger log = LoggerFactory.getLogger(MessageBroker.class);
     private MessageQueue messageQueue;
     private INewMessageListener listener;
     private Node node;
