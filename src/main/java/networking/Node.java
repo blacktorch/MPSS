@@ -165,7 +165,7 @@ public class Node  implements INewMessageListener, Runnable {
     }
 
     public void run() {
-        
+
         if (!terminated && connected) {
 
             try {
