@@ -8,6 +8,6 @@ This can be very useful in [multi agent](https://en.wikipedia.org/wiki/Multi-age
 > - No strict [Interface Description Language (IDL)](https://en.wikipedia.org/wiki/Interface_description_language) declaration. (Flexibility of data to be sent and received).
 > - Data is passed around using [JSON](https://www.json.org/json-en.html).
 
-##Software Architecture
+## Software Architecture
 
-![Software Architecture](/software_architecture.png =500x468)
+![Software Architecture](/software_architecture.png | width=500px)
