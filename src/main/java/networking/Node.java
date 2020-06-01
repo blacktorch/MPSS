@@ -6,6 +6,8 @@ import messaging.Message;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.Constants;
 
 import java.io.*;
@@ -14,33 +16,39 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 
 public class Node  implements INewMessageListener, Runnable {
+    private static Logger log = LoggerFactory.getLogger(Node.class);
     private Socket nodeSocket;
     private OutputStream out;
     private InputStream in;
     private InetAddress address;
     private boolean connected;
     private int type;
+    private String typeName;
     private volatile boolean terminated = false;
     private INodeDataChangeListener nodeDataChangeListener;
     private List<String> subjectTitles;
+    private long GUID;
 
     public Node(Socket socket, INodeDataChangeListener nodeDataChangeListener){
         this.nodeSocket = socket;
         this.nodeDataChangeListener = nodeDataChangeListener;
+        GUID = new Random(System.currentTimeMillis()).nextLong();
         subjectTitles = new ArrayList<String>();
+        typeName = "UNDEFINED";
 
         if (nodeSocket.isConnected()){
-            System.out.println("Connected...");
+            log.info("Node with Id: " + GUID + " has been connected.");
             try {
                 out = nodeSocket.getOutputStream();
                 in = nodeSocket.getInputStream();
                 this.connected = true;
                 this.address = nodeSocket.getInetAddress();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error(e.getMessage(), e);
             }
 
         }
@@ -52,15 +60,14 @@ public class Node  implements INewMessageListener, Runnable {
         int read;
         while ((read = in.read()) != 0) {
             if (read == -1){
-                removeNode();
+                terminate();
                 throw new IOException();
             }
             buffer.write(read);
         }
         String message = buffer.toString();
         try {
-            JSONObject json = new JSONObject(message);
-            return json;
+            return new JSONObject(message);
         } catch(JSONException e){
             e.printStackTrace();
         }
@@ -88,21 +95,26 @@ public class Node  implements INewMessageListener, Runnable {
     private void removeNode() {
         if (nodeSocket != null){
             try {
+                log.info("Terminating " + typeName + " node with Id: " + GUID + " and closing socket.");
                 nodeSocket.close();
             }
-            catch(IOException ignored) {}
+            catch(IOException e) {
+                log.error(e.getMessage(), e);
+            }
         }
         try {
             Thread.sleep(200);
-        } catch (InterruptedException ignored) {}
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+        }
         connected = false;
     }
 
-    public int getType(){
+    public synchronized int getType(){
         return type;
     }
 
-    public boolean isConnected(){
+    public synchronized boolean isConnected(){
         return connected && !terminated;
     }
 
@@ -110,13 +122,21 @@ public class Node  implements INewMessageListener, Runnable {
         return address;
     }
 
-    public void setType(int type){
+    public synchronized void setType(int type){
         this.type = type;
     }
 
     public synchronized void terminate(){
         terminated = true;
         removeNode();
+    }
+
+    public synchronized long getGUID(){
+        return GUID;
+    }
+
+    public synchronized String getTypeName(){
+        return typeName;
     }
 
     private synchronized List<String> getSubjectTitles(JSONArray jsonArray){
@@ -134,13 +154,13 @@ public class Node  implements INewMessageListener, Runnable {
     private void checkAndRemoveNode( int timeout){
         try {
             if (!nodeSocket.getInetAddress().isReachable(timeout)){
-                System.out.println("Node Disconnected");
                 terminate();
+                log.info(typeName + " node with Id: " + GUID + " has been disconnected");
             }
         } catch (IOException e){
             /*terminate node if the pipe is broken*/
-            System.out.println("Node Disconnected");
             terminate();
+            log.error(typeName + " node with Id: " + GUID + " has been terminated because it could not be reached.");
         }
     }
 
@@ -151,18 +171,23 @@ public class Node  implements INewMessageListener, Runnable {
 
             try {
                 JSONObject message = receiveMessage();
-                System.out.println(message.toString());
                 if (message.getString(Constants.TYPE).equals(Constants.SUB)) {
-                    this.setType(Constants.SUBSCRIBER);
+                    type = Constants.SUBSCRIBER;
+                    typeName = Constants.SUB;
                     subjectTitles = getSubjectTitles(message.getJSONArray(Constants.SUBJECTS));
+                    log.info("Node with Id: " + GUID + " has been identified as a Subscriber to subjects: " +
+                            subjectTitles.toString());
                 } else if (message.getString(Constants.TYPE).equals(Constants.PUB)) {
-                    this.setType(Constants.PUBLISHER);
+                    type = Constants.PUBLISHER;
+                    typeName = Constants.PUB;
                     subjectTitles = getSubjectTitles(message.getJSONArray(Constants.SUBJECTS));
+                    log.info("Node with Id: " + GUID + " has been identified as a Publisher to the subjects: " +
+                            subjectTitles.toString());
                 } else {
                     terminate();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error(e.getMessage(), e);
             }
         }
         while (!terminated && connected){
@@ -172,7 +197,8 @@ public class Node  implements INewMessageListener, Runnable {
                     if (isDataAvailable()){
                         JSONObject message = receiveMessage();
                         assert message != null;
-                        Message data = new Message(message.getJSONObject(Constants.DATA), subjectTitles, message.getLong(Constants.TIME_STAMP));
+                        Message data = new Message(message.getJSONObject(Constants.DATA), subjectTitles,
+                                message.getLong(Constants.TIME_STAMP));
                         this.nodeDataChangeListener.onNewPublisherData(data);
                     } else {
                         /*Check if the publisher node is still alive*/
@@ -181,7 +207,7 @@ public class Node  implements INewMessageListener, Runnable {
                     }
 
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.error(e.getMessage(), e);
                 }
             }else if(type == Constants.SUBSCRIBER) {
                 /*Check if the subscriber node is still alive*/
@@ -194,12 +220,12 @@ public class Node  implements INewMessageListener, Runnable {
     public synchronized void onNewPublishedMessage(Message message) {
         try {
             if (type == Constants.SUBSCRIBER){
-
                 for (String subject : message.getSubjectTitles()){
                     if (subjectTitles.contains(subject)){
                         message.getData().put(Constants.SUBJECT, subject);
+                        log.info("Message with subject - " + subject + " is being published to Subscriber" +
+                                " node with Id: " + GUID);
                         sendMessage(message.getData());
-                        System.out.println(message.getData().toString());
                     }
                 }
 
