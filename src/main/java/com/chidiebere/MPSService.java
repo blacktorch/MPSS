@@ -1,4 +1,6 @@
-import networking.NetworkBus;
+package com.chidiebere;
+
+import com.chidiebere.networking.NetworkBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

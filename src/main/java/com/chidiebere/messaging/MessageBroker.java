@@ -1,10 +1,10 @@
-package messaging;
+package com.chidiebere.messaging;
 
-import interfaces.INewMessageListener;
-import networking.Node;
+import com.chidiebere.interfaces.INewMessageListener;
+import com.chidiebere.networking.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.Constants;
+import com.chidiebere.utils.Constants;
 
 public class MessageBroker implements Runnable {
     private static Logger log = LoggerFactory.getLogger(MessageBroker.class);

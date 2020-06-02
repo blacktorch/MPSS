@@ -1,4 +1,4 @@
-package messaging;
+package com.chidiebere.messaging;
 
 import org.json.JSONObject;
 
