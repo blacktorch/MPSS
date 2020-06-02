@@ -1,14 +1,14 @@
-package networking;
+package com.chidiebere.networking;
 
-import interfaces.INewMessageListener;
-import interfaces.INodeDataChangeListener;
-import messaging.Message;
+import com.chidiebere.interfaces.INewMessageListener;
+import com.chidiebere.interfaces.INodeDataChangeListener;
+import com.chidiebere.messaging.Message;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.Constants;
+import com.chidiebere.utils.Constants;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -37,7 +37,7 @@ public class Node  implements INewMessageListener, Runnable {
         this.nodeSocket = socket;
         this.nodeDataChangeListener = nodeDataChangeListener;
         GUID = new Random(System.currentTimeMillis()).nextLong();
-        subjectTitles = new ArrayList<String>();
+        subjectTitles = new ArrayList<>();
         typeName = "UNDEFINED";
 
         if (nodeSocket.isConnected()){
@@ -140,7 +140,7 @@ public class Node  implements INewMessageListener, Runnable {
     }
 
     private synchronized List<String> getSubjectTitles(JSONArray jsonArray){
-        List<String> subjectTitles = new ArrayList<String>();
+        List<String> subjectTitles = new ArrayList<>();
         for (int i = 0; i < jsonArray.length(); i++){
             subjectTitles.add(jsonArray.getString(i));
         }
@@ -221,17 +221,21 @@ public class Node  implements INewMessageListener, Runnable {
             if (type == Constants.SUBSCRIBER){
                 for (String subject : message.getSubjectTitles()){
                     if (subjectTitles.contains(subject)){
-                        message.getData().put(Constants.SUBJECT, subject);
                         log.info("Message with subject - " + subject + " is being published to Subscriber" +
                                 " node with Id: " + GUID);
-                        sendMessage(message.getData());
+                        JSONObject data = new JSONObject();
+                        data.put(subject, message.getData().getJSONObject(subject));
+                        sendMessage(data);
                     }
                 }
 
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
+        } catch (JSONException je){
+            log.error("No data was sent for " + subjectTitles);
+            log.error(je.getMessage(), je);
         }
     }
 }

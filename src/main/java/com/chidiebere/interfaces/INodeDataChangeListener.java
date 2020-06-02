@@ -1,6 +1,6 @@
-package interfaces;
+package com.chidiebere.interfaces;
 
-import messaging.Message;
+import com.chidiebere.messaging.Message;
 
 public interface INodeDataChangeListener {
     void onNewPublisherData(Message data);

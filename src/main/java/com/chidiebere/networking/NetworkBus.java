@@ -1,17 +1,16 @@
-package networking;
+package com.chidiebere.networking;
 
-import interfaces.INodeDataChangeListener;
-import messaging.Message;
-import messaging.MessageBroker;
+import com.chidiebere.interfaces.INodeDataChangeListener;
+import com.chidiebere.messaging.Message;
+import com.chidiebere.messaging.MessageBroker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.Constants;
+import com.chidiebere.utils.Constants;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +28,7 @@ public class NetworkBus implements INodeDataChangeListener {
         this.port = port;
         this.address = InetAddress.getByName(host);
         executorService = Executors.newFixedThreadPool(Constants.QUEUE_CAPACITY);
-        messageBrokers = new CopyOnWriteArrayList<MessageBroker>();
+        messageBrokers = new CopyOnWriteArrayList<>();
 
     }
 

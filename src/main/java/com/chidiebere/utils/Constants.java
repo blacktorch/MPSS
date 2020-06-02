@@ -1,4 +1,4 @@
-package utils;
+package com.chidiebere.utils;
 
 public final class Constants {
 

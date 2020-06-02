@@ -11,7 +11,7 @@ There are key features the make _MPSS_ stand out:
 
 ## Software Architecture
 <p align="center">
-    <img src="./software_architecture.png" width="400">
+    <img src="./software_architecture.png" width="600" alt="Software Architecture">
 </p>
 
 When a subscriber node registers its interest in a subject or multiple subjects, a message broker
@@ -27,7 +27,7 @@ the node type i.e Subscriber or Publisher, the subjects being subscribed or publ
 and the data when necessary.
 
 > #### Subscribers
-> To register as a subscriber, connect to the network bus (which is where ever the MPSService is running)<br>
+> To register as a subscriber, connect to the network bus (which is where ever the com.chidiebere.MPSService is running)<br>
 and send a [JSON](https://www.json.org/json-en.html) message in this format.
 
 ````JSON
@@ -41,7 +41,7 @@ and send a [JSON](https://www.json.org/json-en.html) message in this format.
 > on the subjects subscribed to.
 
 > #### Publishers
-> To register as a publisher, connect to the network bus (which is where ever the MPSService is running)<br>
+> To register as a publisher, connect to the network bus (which is where ever the com.chidiebere.MPSService is running)<br>
 and send a [JSON](https://www.json.org/json-en.html) message in this format.
 
 ````JSON
@@ -50,8 +50,18 @@ and send a [JSON](https://www.json.org/json-en.html) message in this format.
   "subjects" : ["Subject1", "Subject2", "Subject3"],
   "_timeStamp" : 12345678987,
   "data" : {
-        "name" : "Jane Deo",
-        "age" : 21
+       "Subject1" : {
+              "string" : "I am subject1",
+              "int" : 1234
+        },
+       "Subject2" : {
+              "string" : "I am subject2",
+              "int" : 5678
+        },
+       "Subject3" : {
+               "string" : "I am subject3",
+               "list" : [1, 2, 3, 4]
+       }
   }
 }
 ````
