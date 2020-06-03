@@ -1,5 +1,12 @@
+/*
+ * Copyright (c) 2020, Chidiebere
+ * */
+
 package com.chidiebere.utils;
 
+/**
+ * @author Chidiebere Onyedinma
+ * **/
 public final class Constants {
 
     public static final int SUBSCRIBER = 0x231;

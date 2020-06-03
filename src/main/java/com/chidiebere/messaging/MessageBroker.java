@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020, Chidiebere
+ * */
+
 package com.chidiebere.messaging;
 
 import com.chidiebere.interfaces.INewMessageListener;
@@ -6,6 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.chidiebere.utils.Constants;
 
+/**
+ * @author Chidiebere Onyedinma
+ * **/
 public class MessageBroker implements Runnable {
     private static Logger log = LoggerFactory.getLogger(MessageBroker.class);
     private MessageQueue messageQueue;

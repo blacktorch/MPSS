@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020, Chidiebere
+ * */
+
 package com.chidiebere.networking;
 
 import com.chidiebere.interfaces.INewMessageListener;
@@ -18,6 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * @author Chidiebere Onyedinma
+ * **/
 
 public class Node  implements INewMessageListener, Runnable {
     private static Logger log = LoggerFactory.getLogger(Node.class);

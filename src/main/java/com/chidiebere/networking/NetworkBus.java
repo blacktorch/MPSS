@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020, Chidiebere
+ * */
+
 package com.chidiebere.networking;
 
 import com.chidiebere.interfaces.INodeDataChangeListener;
@@ -15,6 +19,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+/**
+ * @author Chidiebere Onyedinma
+ * **/
 
 public class NetworkBus implements INodeDataChangeListener {
     private static Logger log = LoggerFactory.getLogger(NetworkBus.class);

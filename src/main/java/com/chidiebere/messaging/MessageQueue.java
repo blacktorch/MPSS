@@ -1,6 +1,14 @@
+/*
+ * Copyright (c) 2020, Chidiebere
+ * */
+
 package com.chidiebere.messaging;
 
 import java.util.Vector;
+
+/**
+ * @author Chidiebere Onyedinma
+ * **/
 
 public class MessageQueue {
     /**

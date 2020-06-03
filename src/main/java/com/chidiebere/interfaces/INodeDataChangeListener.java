@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020, Chidiebere
+ * */
+
 package com.chidiebere.interfaces;
 
 import com.chidiebere.messaging.Message;
