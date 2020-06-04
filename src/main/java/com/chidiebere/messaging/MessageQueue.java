@@ -1,6 +1,14 @@
-package messaging;
+/*
+ * Copyright (c) 2020, Chidiebere
+ * */
+
+package com.chidiebere.messaging;
 
 import java.util.Vector;
+
+/**
+ * @author Chidiebere Onyedinma
+ * **/
 
 public class MessageQueue {
     /**
@@ -11,7 +19,7 @@ public class MessageQueue {
     /**
      * The queue itself, all incoming messages are stored in here.
      */
-    private Vector<Message> queue = new Vector<Message>(capacity);
+    private Vector<Message> queue = new Vector<>(capacity);
 
     /**
      * Constructor, initializes the queue.
@@ -25,7 +33,7 @@ public class MessageQueue {
     /**
      * Adds a new message to the queue. If the queue is full, it waits until a message is released.
      *
-     * @param message
+     * @param message a message to added to the queue
      */
     public synchronized void send(Message message) {
         if (queue.size() < capacity ){
@@ -36,7 +44,7 @@ public class MessageQueue {
     /**
      * Receives a new message and removes it from the queue.
      *
-     * @return
+     * @return returns a message to be published
      */
     public synchronized Message receive() {
         Message message = queue.firstElement();

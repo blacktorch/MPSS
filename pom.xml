@@ -32,7 +32,7 @@
                             <finalName>MPSService</finalName>
                             <archive>
                                 <manifest>
-                                    <mainClass>MPSService</mainClass>
+                                    <mainClass>com.chidiebere.MPSService</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>

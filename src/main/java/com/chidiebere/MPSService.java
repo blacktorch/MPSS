@@ -1,9 +1,18 @@
-import networking.NetworkBus;
+/*
+ * Copyright (c) 2020, Chidiebere
+ * */
+
+package com.chidiebere;
+
+import com.chidiebere.networking.NetworkBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
 
+/**
+ * @author Chidiebere Onyedinma
+ * **/
 public class MPSService {
 
     private static Logger log = LoggerFactory.getLogger(MPSService.class);
