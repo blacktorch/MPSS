@@ -26,7 +26,6 @@ import java.util.concurrent.Executors;
 
 public class NetworkBus implements INodeDataChangeListener {
     private static Logger log = LoggerFactory.getLogger(NetworkBus.class);
-    ServerSocket serverSocket;
     private int port;
     private InetAddress address;
     private List<MessageBroker> messageBrokers;
@@ -42,7 +41,7 @@ public class NetworkBus implements INodeDataChangeListener {
 
     public void start() {
         try {
-            serverSocket = new ServerSocket(port, Constants.QUEUE_CAPACITY, address);
+            ServerSocket serverSocket = new ServerSocket(port, Constants.QUEUE_CAPACITY, address);
             log.info("Service started at Host: " + address.getHostName() + " and Port: " + port);
             while (true) {
                 Node node = new Node(serverSocket.accept(), this);
