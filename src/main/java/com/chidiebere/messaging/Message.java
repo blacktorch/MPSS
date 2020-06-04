@@ -1,8 +1,16 @@
-package messaging;
+/*
+ * Copyright (c) 2020, Chidiebere
+ * */
+
+package com.chidiebere.messaging;
 
 import org.json.JSONObject;
 
 import java.util.List;
+
+/**
+ * @author Chidiebere Onyedinma
+ * **/
 
 public class Message {
     private long timeStamp;

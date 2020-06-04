@@ -1,25 +1,31 @@
-package networking;
+/*
+ * Copyright (c) 2020, Chidiebere
+ * */
 
-import interfaces.INodeDataChangeListener;
-import messaging.Message;
-import messaging.MessageBroker;
+package com.chidiebere.networking;
+
+import com.chidiebere.interfaces.INodeDataChangeListener;
+import com.chidiebere.messaging.Message;
+import com.chidiebere.messaging.MessageBroker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.Constants;
+import com.chidiebere.utils.Constants;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * @author Chidiebere Onyedinma
+ * **/
+
 public class NetworkBus implements INodeDataChangeListener {
     private static Logger log = LoggerFactory.getLogger(NetworkBus.class);
-    ServerSocket serverSocket;
     private int port;
     private InetAddress address;
     private List<MessageBroker> messageBrokers;
@@ -29,13 +35,13 @@ public class NetworkBus implements INodeDataChangeListener {
         this.port = port;
         this.address = InetAddress.getByName(host);
         executorService = Executors.newFixedThreadPool(Constants.QUEUE_CAPACITY);
-        messageBrokers = new CopyOnWriteArrayList<MessageBroker>();
+        messageBrokers = new CopyOnWriteArrayList<>();
 
     }
 
     public void start() {
         try {
-            serverSocket = new ServerSocket(port, Constants.QUEUE_CAPACITY, address);
+            ServerSocket serverSocket = new ServerSocket(port, Constants.QUEUE_CAPACITY, address);
             log.info("Service started at Host: " + address.getHostName() + " and Port: " + port);
             while (true) {
                 Node node = new Node(serverSocket.accept(), this);
