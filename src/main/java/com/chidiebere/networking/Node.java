@@ -7,6 +7,8 @@ package com.chidiebere.networking;
 import com.chidiebere.interfaces.INewMessageListener;
 import com.chidiebere.interfaces.INodeDataChangeListener;
 import com.chidiebere.messaging.Message;
+import com.chidiebere.network.Transport;
+import com.chidiebere.nodes.Participants;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,12 +35,13 @@ public class Node  implements INewMessageListener, Runnable {
     private InputStream in;
     private InetAddress address;
     private boolean connected;
-    private int type;
+    private Participants type;
     private String typeName;
     private volatile boolean terminated = false;
     private INodeDataChangeListener nodeDataChangeListener;
     private List<String> subjectTitles;
     private long GUID;
+    private Transport transport;
 
     public Node(Socket socket, INodeDataChangeListener nodeDataChangeListener){
         this.nodeSocket = socket;
@@ -50,6 +53,7 @@ public class Node  implements INewMessageListener, Runnable {
         if (nodeSocket.isConnected()){
             log.info("Node with Id: " + GUID + " has been connected.");
             try {
+                transport = new Transport(socket);
                 out = nodeSocket.getOutputStream();
                 in = nodeSocket.getInputStream();
                 this.connected = true;
@@ -117,7 +121,7 @@ public class Node  implements INewMessageListener, Runnable {
         connected = false;
     }
 
-    public synchronized int getType(){
+    public synchronized Participants getType(){
         return type;
     }
 
@@ -129,7 +133,7 @@ public class Node  implements INewMessageListener, Runnable {
         return address;
     }
 
-    public synchronized void setType(int type){
+    public synchronized void setType(Participants type){
         this.type = type;
     }
 
@@ -176,15 +180,15 @@ public class Node  implements INewMessageListener, Runnable {
         if (!terminated && connected) {
 
             try {
-                JSONObject message = receiveMessage();
-                if (message.getString(Constants.TYPE).equals(Constants.SUB)) {
-                    type = Constants.SUBSCRIBER;
+                JSONObject message = transport.receiveMessage();
+                if (message.getString(Constants.TYPE).toUpperCase().equals(Constants.SUB.toUpperCase())) {
+                    type = Participants.SUBSCRIBER;
                     typeName = Constants.SUB;
                     subjectTitles = getSubjectTitles(message.getJSONArray(Constants.SUBJECTS));
                     log.info("Node with Id: " + GUID + " has been identified as a Subscriber to subjects: " +
                             subjectTitles.toString());
-                } else if (message.getString(Constants.TYPE).equals(Constants.PUB)) {
-                    type = Constants.PUBLISHER;
+                } else if (message.getString(Constants.TYPE).toUpperCase().equals(Constants.PUB.toUpperCase())) {
+                    type = Participants.PUBLISHER;
                     typeName = Constants.PUB;
                     subjectTitles = getSubjectTitles(message.getJSONArray(Constants.SUBJECTS));
                     log.info("Node with Id: " + GUID + " has been identified as a Publisher to the subjects: " +
@@ -198,10 +202,10 @@ public class Node  implements INewMessageListener, Runnable {
         }
         while (!terminated && connected){
 
-            if (type == Constants.PUBLISHER) {
+            if (type == Participants.PUBLISHER) {
                 try {
-                    if (isDataAvailable()){
-                        JSONObject message = receiveMessage();
+                    if (transport.isDataAvailable()){
+                        JSONObject message = transport.receiveMessage();
                         assert message != null;
                         Message data = new Message(message.getJSONObject(Constants.DATA), subjectTitles,
                                 message.getLong(Constants.TIME_STAMP));
@@ -215,7 +219,7 @@ public class Node  implements INewMessageListener, Runnable {
                 } catch (IOException e) {
                     log.error(e.getMessage(), e);
                 }
-            }else if(type == Constants.SUBSCRIBER) {
+            }else if(type == Participants.SUBSCRIBER) {
                 /*Check if the subscriber node is still alive*/
                 checkAndRemoveNode(Constants.SUBSCRIBER_HEARTBEAT_TIMEOUT);
             }
@@ -225,21 +229,30 @@ public class Node  implements INewMessageListener, Runnable {
 
     public synchronized void onNewPublishedMessage(Message message) {
         try {
-            if (type == Constants.SUBSCRIBER){
+            if (type == Participants.SUBSCRIBER){
+                boolean hasSubject = false;
+                JSONObject data = new JSONObject();
                 for (String subject : message.getSubjectTitles()){
                     if (subjectTitles.contains(subject)){
+                        hasSubject = true;
                         log.info("Message with subject - " + subject + " is being published to Subscriber" +
                                 " node with Id: " + GUID);
-                        JSONObject data = new JSONObject();
                         data.put(subject, message.getData().getJSONObject(subject));
-                        sendMessage(data);
+                    }
+                }
+
+                if (hasSubject){
+                    data.put(Constants.TIME_STAMP, message.getTimeStamp());
+                    try{
+                        transport.sendMessage(data);
+                    }catch (IOException ex){
+                        terminate();
+                        log.info("Node has been disconnected");
                     }
                 }
 
             }
 
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
         } catch (JSONException je){
             log.error("No data was sent for " + subjectTitles);
             log.error(je.getMessage(), je);
