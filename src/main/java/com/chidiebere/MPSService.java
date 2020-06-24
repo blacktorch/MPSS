@@ -19,8 +19,9 @@ public class MPSService {
     private static String IP = "localhost";
     private static int PORT = 12345;
     public static void main(String[] args) throws UnknownHostException {
-        if (args.length > 0 && !args[0].equals("")){
+        if (args.length > 1 && !args[0].equals("")){
             IP = args[0];
+            PORT = Integer.parseInt(args[1]);
         }
         log.info("Service Launched");
         NetworkBus networkBus = new NetworkBus(IP, PORT);
