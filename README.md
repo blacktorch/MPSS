@@ -56,11 +56,11 @@ and send a [JSON](https://www.json.org/json-en.html) message in this format.
         },
        "Subject2" : {
               "string" : "I am subject2",
-              "int" : 5678
+              "float" : 56.90
         },
        "Subject3" : {
                "string" : "I am subject3",
-               "list" : [1, 2, 3, 4]
+               "array" : [1, 2, 3, 4]
        }
   }
 }
@@ -68,3 +68,12 @@ and send a [JSON](https://www.json.org/json-en.html) message in this format.
 
 ##### Message Termination
 > To indicate the end of a message, send a `0 byte` in other for the JSON to be parsed correctly.
+
+### Building and Running the Service
+__MPSS__ depends on [MPSCore](https://github.com/blacktorch/MPSCore) which is a [Maven](https://maven.apache.org/) project.
+Clone, build and install it as a Maven dependency or package the Jar using ``mvn package`` and add it as a library to the
+project.
+
+##### Running the Service
+To run the service, you have to pass the _host_ and _port_ as arguments e.g. ``MPSService 10.10.16.123 12865``, if no
+argument is passed, _localhost_ will be used as the host and _12345_ will be used as the port. 
